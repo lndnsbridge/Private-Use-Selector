@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0b0e18">
+  <meta name="description" content="Generate Minecraft bitmap font JSON from Unicode grids and copy private-use Unicode characters in one offline-ready tool.">
+  <title>Glyph Studio — Minecraft Font Tools</title>
+  <style>
+    :root { color-scheme: dark; --bg: #0a0d16; --panel: #121725; --panel-2: #171d2f; --panel-3: #1c2233; --line: #293145; --line-soft: #232a3c; --ink: #f3f5fd; --muted: #9da9c1; --soft: #747f98; --accent: #a68aff; --accent-2: #75b5fa; --good: #73daba; --bad: #f8a1a6; --radius: 18px; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; min-height: 100vh; color: var(--ink); background: radial-gradient(ellipse 85% 55% at 77% -19%, rgba(106,86,214,.19),transparent 72%), radial-gradient(ellipse 60% 48% at -19% 75%, rgba(40,93,156,.08),transparent 85%), var(--bg); }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { opacity: .43; cursor: not-allowed; }
+    button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .topbar { height: 78px; border-bottom: 1px solid rgba(134,150,186,.13); background: rgba(11,14,24,.63); backdrop-filter: blur(14px); }
+    .topbar-inner { max-width: 1440px; height: 100%; margin: auto; padding: 0 34px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .brand { display: inline-flex; align-items: center; gap: 12px; color: var(--ink); text-decoration: none; }
+    .brand-icon { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid #b9a7ff88; border-radius: 12px; background: linear-gradient(135deg, #a78cff 0%,#7759b8 100%); box-shadow: 0 0 35px #9b76ec25; color: white; font-size: 22px; font-weight: 800; letter-spacing: -2px; }
+    .brand-name { font-weight: 800; font-size: 17px; letter-spacing: -.5px; }
+    .brand-caption { color: var(--soft); font-size: 11px; font-weight: 600; letter-spacing: .11em; text-transform: uppercase; margin-top: 2px; }
+    .top-status { display: flex; align-items: center; gap: 9px; padding: 9px 13px; background: #151c2a; color: #aeb8ce; border: 1px solid #2a3449; border-radius: 999px; font-size: 12px; font-weight: 650; white-space: nowrap; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #83e0b4; box-shadow: 0 0 12px #83e0b477; }
+    .layout { max-width: 1440px; margin: auto; padding: 36px 34px 60px; display: grid; grid-template-columns: 245px minmax(0, 1fr); gap: 37px; }
+    .sidebar { padding-top: 4px; }
+    .smallcap { text-transform: uppercase; font-size: 10px; font-weight: 800; letter-spacing: .17em; color: #77849c; }
+    .side-nav { margin-top: 16px; display: grid; gap: 7px; }
+    .nav-item { display: flex; align-items: center; gap: 12px; text-align: left; width: 100%; color: #a5b1c8; background: transparent; border: 1px solid transparent; border-radius: 11px; padding: 13px 13px; font-size: 13px; font-weight: 700; transition: background .15s ease, border-color .15s ease; }
+    .nav-item:hover { color: #fff; background: #151d2b; }
+    .nav-item.active { color: #e7dcff; background: #382b5f60; border-color: #785bae67; }
+    .nav-item .nav-icon { font-size: 18px; width: 20px; text-align: center; color: #b39cf8; }
+    .sidebar-note { background: linear-gradient(135deg,#171b31,#151a29); border: 1px solid #2b3147; padding: 19px; border-radius: 15px; margin-top: 36px; }
+    .sidebar-note .note-title { font-size: 13px; font-weight: 800; margin: 12px 0 7px; }
+    .sidebar-note p { margin: 0; color: #9aa6be; font-size: 12px; line-height: 1.7; }
+    .note-glyph { font-size: 23px; color: #bba6ff; }
+    .side-tip { color: #8490a9; font-size: 12px; line-height: 1.8; padding: 22px 8px 0; }
+    .side-tip code { color: #d2c4ff; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+    main { min-width: 0; }
+    .eyebrow { color: #b99dff; font-size: 11px; font-weight: 800; letter-spacing: .17em; text-transform: uppercase; margin-bottom: 13px; display: flex; align-items: center; gap: 9px; }
+    .eyebrow::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #b99dff; }
+    h1 { font-size: clamp(29px, 3.55vw, 45px); line-height: 1.13; letter-spacing: -.055em; margin: 0 0 13px; font-weight: 830; }
+    .gradient-text { background: linear-gradient(105deg,#d3c3ff 0%, #9cbaef 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .intro { margin: 0; max-width: 725px; color: #a8b2c8; font-size: 14px; line-height: 1.8; }
+    .pill-line { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 17px; }
+    .pill { border-radius: 100px; border: 1px solid #30374d; padding: 6px 10px; font-size: 11px; font-weight: 650; color: #a3aec5; background: #131a2a; }
+    .pill strong { color: #bcaaff; font-weight: 800; }
+    .working-grid { display: grid; grid-template-columns: minmax(310px, .83fr) minmax(400px, 1.17fr); gap: 20px; margin-top: 31px; align-items: start; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: 0 16px 50px #00000012; }
+    .card-head { padding: 20px 22px; border-bottom: 1px solid var(--line-soft); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .card-heading { margin: 0; font-size: 14px; letter-spacing: -.015em; font-weight: 800; }
+    .card-subheading { margin: 4px 0 0; color: #8794ae; font-size: 11px; }
+    .card-body { padding: 22px; }
+    .mini-label { color: #a1acc3; text-transform: uppercase; font-size: 10px; letter-spacing: .1em; font-weight: 800; margin: 0 0 12px; }
+    .input-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+    .field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+    .field.wide { grid-column: 1 / -1; }
+    .field label { font-size: 12px; font-weight: 700; color: #c8d0e1; }
+    input, select { width: 100%; min-width: 0; background: #0d1321; color: #f4f5ff; border: 1px solid #30384e; border-radius: 9px; padding: 12px 12px; font-size: 13px; transition: border-color .15s, box-shadow .15s; }
+    input:hover, select:hover { border-color: #4b5672; }
+    input:focus, select:focus { border-color: #8c70da; box-shadow: 0 0 0 3px #9b81e119; outline: none; }
+    input::placeholder { color: #62708d; }
+    .help { font-size: 11px; color: #7e8aa4; line-height: 1.55; }
+    .break { height: 1px; background: var(--line-soft); margin: 23px 0; }
+    .stats { margin-top: 19px; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+    .stat { background: #171e30; border: 1px solid #283349; border-radius: 11px; padding: 13px 14px; }
+    .stat-num { font-size: 21px; font-weight: 820; letter-spacing: -.05em; color: #f0edff; }
+    .stat-label { color: #8290ae; font-size: 10px; margin-top: 3px; font-weight: 650; }
+    .error { padding: 12px 14px; border: 1px solid #a45f6a70; color: #ffb4c0; border-radius: 9px; margin-top: 16px; background: #743c4b26; font-size: 12px; line-height: 1.6; }
+    .btn { border-radius: 9px; border: 1px solid #3b445a; padding: 11px 13px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; gap: 9px; white-space: nowrap; background: #20283a; color: #dce4f9; transition: border-color .15s, background .15s, transform .15s; }
+    .btn:hover:not(:disabled) { background: #2b344a; border-color: #69768e; }
+    .btn:active:not(:disabled) { transform: translateY(1px); }
+    .btn-primary { background: linear-gradient(125deg,#ac92fa,#8a75e4); color: #10111a; border-color: #baa0ff; box-shadow: 0 4px 22px #9c84f42b; }
+    .btn-primary:hover:not(:disabled) { background: linear-gradient(125deg,#bdaaff,#9f8af1); border-color: #d6c7ff; }
+    .btn-light { background: transparent; border-color: #344158; }
+    .btn-compact { padding: 8px 11px; font-size: 11px; }
+    .btn-wide { width: 100%; }
+    .action-row { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 16px; }
+    .section-space { margin-top: 20px; }
+    .output-switcher { display: flex; gap: 4px; background: #0d1321; border-radius: 9px; border: 1px solid #28334a; padding: 3px; }
+    .switch { background: none; color: #8996b0; padding: 6px 11px; border: 0; border-radius: 6px; font-size: 10px; font-weight: 800; }
+    .switch.selected { color: #e8e0ff; background: #30304c; }
+    .code-area { background: #0b111d; color: #c8d3ed; margin: 0; padding: 20px; min-height: 345px; max-height: 460px; overflow: auto; font: 12px/1.9 ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace; tab-size: 2; scrollbar-color: #343f57 transparent; }
+    .code-area .key { color: #8eb8ff; }
+    .code-area .str { color: #b7db9f; }
+    .code-area .num { color: #e9b980; }
+    .code-area .punct { color: #a6acc2; }
+    .code-tools { padding: 14px 18px; border-top: 1px solid var(--line-soft); display: flex; align-items: center; gap: 9px; justify-content: space-between; flex-wrap: wrap; }
+    .preview-card { margin-top: 20px; }
+    .preview-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .tiles { display: grid; grid-template-columns: repeat(9,minmax(0,1fr)); gap: 7px; margin-top: 18px; }
+    .glyph-tile { min-width: 0; border-radius: 8px; background: #192033; border: 1px solid #34405a; padding: 10px 1px; color: #bcb6e8; text-align: center; }
+    .glyph-tile:hover { border-color: #a48be9; background: #2a2849; }
+    .glyph-square { display: flex; width: 25px; height: 25px; margin: auto auto 8px; border: 1px solid #6e65a8; border-radius: 5px; align-items: center; justify-content: center; font-size: 14px; color: #bcabff; background: linear-gradient(145deg,#282848,#1b2640); }
+    .glyph-id { font-size: 9px; font-family: ui-monospace, SFMono-Regular, Consolas,monospace; color: #a7b1c7; display: block; white-space: nowrap; }
+    .explain { border: 1px solid #343d54; background: #171e2e; padding: 16px 18px; border-radius: 13px; color: #a1aec6; font-size: 12px; line-height: 1.75; margin-top: 17px; }
+    .explain strong { color: #e4ddff; }
+    .explain code { font: 11px ui-monospace,SFMono-Regular,Consolas,monospace; color: #c7b7ff; }
+    .copy-layout { display: grid; grid-template-columns: minmax(305px, .88fr) minmax(350px, 1.12fr); gap: 20px; margin-top: 31px; align-items: start; }
+    .symbol-stage { background: radial-gradient(circle at center, #2e2d513f 0%,#0f1521 67%); min-height: 230px; display: grid; place-items: center; border: 1px solid #28354a; border-radius: 12px; margin-bottom: 17px; position: relative; }
+    .symbol-label { position: absolute; top: 15px; left: 18px; font-size: 10px; letter-spacing: .13em; color: #8d9cb7; font-weight: 800; }
+    .symbol { font-size: 90px; line-height: 1.1; color: #c4b0ff; text-shadow: 0 0 28px #9b7bef55; font-family: ui-sans-serif, system-ui, sans-serif; }
+    .symbol-hint { position: absolute; bottom: 15px; left: 16px; right: 16px; text-align: center; font-size: 10px; color: #7888a6; }
+    .info-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid #273046; gap: 10px; }
+    .info-row:last-child { border: 0; }
+    .info-row .desc { color: #8b9ab5; font-size: 12px; }
+    .mono { color: #e3dcff; font: 12px ui-monospace, SFMono-Regular, Consolas,monospace; text-align: right; overflow-wrap: anywhere; }
+    .preset-list { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+    .preset { border: 1px solid #39425a; border-radius: 8px; background: #171e2d; color: #aebcdc; font: 11px ui-monospace,Consolas,monospace; padding: 8px 10px; }
+    .preset:hover { background: #272845; border-color: #a98bf5; }
+    .browser-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+    .browser-grid { display: grid; grid-template-columns: repeat(8,minmax(0,1fr)); gap: 8px; margin-top: 19px; }
+    .browser-cell { min-width: 0; padding: 13px 1px; border: 1px solid #303b54; background: #151c2b; color: #aca9d7; border-radius: 8px; }
+    .browser-cell:hover { background: #262744; border-color: #9d83e8; }
+    .browser-cell.selected { background: #38315c; border-color: #b59ef8; }
+    .browser-code { color: #b8c1d7; font: 10px ui-monospace,Consolas,monospace; }
+    .footer { border-top: 1px solid #252d40; padding-top: 20px; margin-top: 28px; display: flex; justify-content: space-between; gap: 15px; flex-wrap: wrap; color: #65738d; font-size: 11px; }
+    .hidden { display: none !important; }
+    #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(18px); pointer-events: none; opacity: 0; color: #f8f5ff; background: #323054; border: 1px solid #8c78c0; padding: 12px 18px; border-radius: 10px; font-size: 12px; font-weight: 750; box-shadow: 0 15px 45px #0009; transition: opacity .16s,transform .16s; z-index: 100; }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    @media (max-width: 1130px) { .layout { grid-template-columns: 190px minmax(0,1fr); gap: 23px; padding: 28px 24px 50px; } .working-grid, .copy-layout { grid-template-columns: minmax(0,1fr); } .tiles { grid-template-columns: repeat(9,minmax(0,1fr)); } }
+    @media (max-width: 700px) { .topbar { height: 68px; } .topbar-inner { padding: 0 17px; } .top-status { font-size: 0; width: 34px; height: 34px; padding: 0; justify-content: center; } .layout { display: block; padding: 17px 15px 40px; } .sidebar { padding: 0; margin-bottom: 30px; } .sidebar .smallcap, .sidebar-note, .side-tip { display: none; } .side-nav { display: grid; grid-template-columns: 1fr 1fr; margin: 0; gap: 8px; } .nav-item { padding: 11px; font-size: 11px; justify-content: center; gap: 6px; } .nav-item .nav-icon { font-size: 15px; } h1 { font-size: 29px; } .working-grid, .copy-layout { gap: 15px; margin-top: 22px; } .card-body, .card-head { padding: 17px; } .tiles { grid-template-columns: repeat(5,minmax(0,1fr)); } .browser-grid { grid-template-columns: repeat(6,minmax(0,1fr)); } .input-grid { gap: 10px; } .code-area { font-size: 11px; padding: 13px; } .card-head { flex-wrap: wrap; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#" aria-label="Glyph Studio home">
+        <span class="brand-icon" aria-hidden="true">✦</span>
+        <span><span class="brand-name">Glyph Studio</span><span class="brand-caption" style="display:block">Minecraft font tools</span></span>
+      </a>
+      <div class="top-status"><span class="status-dot"></span> 100% client-side · Works offline</div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" aria-label="Tools">
+      <div class="smallcap">Workspace</div>
+      <nav class="side-nav">
+        <button class="nav-item active" id="nav-generator" type="button" data-screen="generator" aria-current="page"><span class="nav-icon" aria-hidden="true">▦</span> Font JSON Generator</button>
+        <button class="nav-item" id="nav-copier" type="button" data-screen="copier"><span class="nav-icon" aria-hidden="true">◇</span> Character Copier</button>
+      </nav>
+      <div class="sidebar-note"><div class="note-glyph">✧</div><div class="note-title">Built for custom icons</div><p>Map a texture sheet to Unicode characters. Copy glyphs directly into Minecraft text components, config files, and chat formatting.</p></div>
+      <div class="side-tip">Java Edition <code>1.21.1</code> compatible.<br>Tip: use <code>F3 + T</code> to reload your resource pack after editing.</div>
+    </aside>
+
+    <main>
+      <section id="screen-generator" class="screen">
+        <div class="eyebrow">01 / Font generator</div>
+        <h1>Fonts without the <span class="gradient-text">busywork.</span></h1>
+        <p class="intro">Set your grid size and starting Unicode point. We'll generate every character, format your bitmap font JSON, and make it ready for your resource pack.</p>
+        <div class="pill-line"><span class="pill"><strong>✦</strong> Auto-increment Unicode</span><span class="pill">1–128 rows / columns</span><span class="pill">Supports all PUA planes</span></div>
+
+        <div class="working-grid">
+          <section class="card" aria-labelledby="configuration-title">
+            <div class="card-head"><div><h2 id="configuration-title" class="card-heading">Font configuration</h2><p class="card-subheading">Define how your icon sheet is arranged</p></div><span style="color:#b59cff">⚙</span></div>
+            <div class="card-body">
+              <div class="mini-label">01 — Character grid</div>
+              <div class="input-grid">
+                <div class="field"><label for="rows">Rows</label><input id="rows" type="number" value="1" min="1" max="128" step="1" inputmode="numeric"></div>
+                <div class="field"><label for="cols">Characters per row</label><input id="cols" type="number" value="9" min="1" max="128" step="1" inputmode="numeric"></div>
+                <div class="field wide"><label for="start">Starting Unicode character</label><input id="start" value="E000" spellcheck="false" autocomplete="off" placeholder="E000, U+E000, \\uE000, or a character"><span class="help">Automatically increments from this character, left to right, top to bottom.</span></div>
+              </div>
+              <div class="break"></div>
+              <div class="mini-label">02 — Texture &amp; positioning</div>
+              <div class="input-grid">
+                <div class="field wide"><label for="texture">PNG texture path</label><input id="texture" value="accs:font/icons.png" spellcheck="false"><span class="help" id="texture-help">Physical path: assets/accs/textures/font/icons.png</span></div>
+                <div class="field"><label for="height">Height</label><input id="height" type="number" value="10" step="1"></div>
+                <div class="field"><label for="ascent">Ascent</label><input id="ascent" type="number" value="8" step="1"></div>
+              </div>
+              <div class="stats"><div class="stat"><div class="stat-num" id="count">9</div><div class="stat-label">Total characters</div></div><div class="stat"><div class="stat-num" id="end-code">E008</div><div class="stat-label">Last code point</div></div></div>
+              <div class="error hidden" id="generator-error" role="alert"></div>
+            </div>
+          </section>
+
+          <section class="card" aria-labelledby="generated-title">
+            <div class="card-head"><div><h2 id="generated-title" class="card-heading">Generated JSON</h2><p class="card-subheading">Live output · height before ascent</p></div><div class="output-switcher" role="group" aria-label="JSON export format"><button type="button" class="switch selected" data-output="full" aria-pressed="true">Full file</button><button type="button" class="switch" data-output="provider" aria-pressed="false">Provider only</button></div></div>
+            <pre class="code-area" id="json-preview" aria-live="polite"></pre>
+            <div class="code-tools"><span class="help" id="json-hint">Paste this into a font JSON file.</span><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-light btn-compact" type="button" id="download-json">↓ Download</button><button class="btn btn-primary btn-compact" type="button" id="copy-json">▣ Copy JSON</button></div></div>
+          </section>
+        </div>
+
+        <section class="card preview-card" aria-labelledby="preview-title">
+          <div class="card-body">
+            <div class="preview-head"><div><h2 class="card-heading" id="preview-title">Generated character map</h2><p class="card-subheading" id="preview-subtitle">Click any tile to copy its actual Unicode character</p></div><button class="btn btn-light btn-compact" id="copy-all" type="button">▣ Copy character grid</button></div>
+            <div class="tiles" id="tile-preview"></div>
+            <div class="help section-space" id="tiles-footnote"></div>
+          </div>
+        </section>
+
+        <div class="explain"><strong>How to use it:</strong> For <code>accs:font/icons.png</code>, place the PNG at <code>assets/accs/textures/font/icons.png</code>. Add the generated provider to <code>assets/minecraft/font/default.json</code> if you want icons available in ordinary text, or use a custom file in <code>assets/accs/font/</code> and select that font in text components. If an existing font JSON already contains providers, merge yours into its <code>providers</code> array rather than overwriting them.</div>
+      </section>
+
+      <section id="screen-copier" class="screen hidden">
+        <div class="eyebrow">02 / Character copier</div>
+        <h1>Find it. <span class="gradient-text">Copy it.</span> Use it.</h1>
+        <p class="intro">Enter any Unicode code point and copy the actual character—no manual escapes. Browse adjacent glyphs for fast resource-pack icon mapping.</p>
+        <div class="pill-line"><span class="pill"><strong>✦</strong> Literal character copy</span><span class="pill">Hex / Unicode / escaped input</span><span class="pill">Supplementary-plane support</span></div>
+        <div class="copy-layout">
+          <section class="card"><div class="card-head"><div><h2 class="card-heading">Character lookup</h2><p class="card-subheading">Works with U+E001 and beyond</p></div></div>
+            <div class="card-body">
+              <div class="field"><label for="lookup">Unicode character or code point</label><input id="lookup" value="E001" spellcheck="false" autocomplete="off" placeholder="E001, U+E001, \\uE001, or "><div class="help">Try E001, U+F0000, \\uE001, or paste a literal character.</div></div>
+              <div class="error hidden" id="copier-error" role="alert"></div>
+              <div class="symbol-stage section-space"><div class="symbol-label">ACTUAL CHARACTER PREVIEW</div><div class="symbol" id="symbol">&#xE001;</div><div class="symbol-hint">Private-use glyphs can appear blank or square until your font maps them.</div></div>
+              <button class="btn btn-primary btn-wide" id="copy-character" type="button">▣ Copy actual character</button>
+              <div class="action-row"><button class="btn btn-light" type="button" id="prev-char">← Previous</button><button class="btn btn-light" type="button" id="next-char">Next →</button></div>
+              <div class="break"></div>
+              <div class="mini-label">Quick start</div>
+              <div class="preset-list" id="preset-list"><button type="button" class="preset" data-code="E000">U+E000</button><button type="button" class="preset" data-code="E001">U+E001</button><button type="button" class="preset" data-code="E008">U+E008</button><button type="button" class="preset" data-code="E100">U+E100</button><button type="button" class="preset" data-code="F8FF">U+F8FF</button><button type="button" class="preset" data-code="F0000">U+F0000</button></div>
+            </div>
+          </section>
+          <div>
+            <section class="card"><div class="card-head"><div><h2 class="card-heading">Character details</h2><p class="card-subheading">Ready for Minecraft config files and JSON</p></div></div><div class="card-body">
+              <div class="info-row"><span class="desc">Code point</span><span class="mono" id="info-code">U+E001</span></div>
+              <div class="info-row"><span class="desc">JSON Unicode escape</span><span class="mono" id="info-escape">\uE001</span></div>
+              <div class="info-row"><span class="desc">Decimal value</span><span class="mono" id="info-decimal">57345</span></div>
+              <div class="info-row"><span class="desc">Unicode category</span><span class="mono" id="info-range">Private Use Area (BMP)</span></div>
+              <div class="action-row"><button class="btn btn-light" type="button" id="copy-escape">▣ Copy JSON escape</button><button class="btn btn-light" type="button" id="copy-code">▣ Copy U+ code</button></div>
+            </div></section>
+            <section class="card preview-card"><div class="card-body"><div class="browser-controls"><div><h2 class="card-heading">Nearby characters</h2><p class="card-subheading">Select a code point to inspect or copy it</p></div><div class="action-row" style="margin:0"><button class="btn btn-light btn-compact" type="button" id="browse-prev">← 24</button><button class="btn btn-light btn-compact" type="button" id="browse-next">24 →</button></div></div><div class="browser-grid" id="browser-grid"></div></div></section>
+          </div>
+        </div>
+        <div class="explain"><strong>Tip:</strong> In JSON, <code>"\uE001"</code> represents the single actual character <code>U+E001</code>. In ordinary chat or a text field that doesn't interpret JSON escapes, use <strong>Copy actual character</strong>. The character may look invisible on your computer but still render as your icon inside Minecraft when the font provider is configured.</div>
+      </section>
+      <footer class="footer"><span>Glyph Studio · Independent static tool for Minecraft Java resource packs</span><span>No accounts · No tracking · No uploads · No dependencies</span></footer>
+    </main>
+  </div>
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      'use strict';
+      const $ = id => document.getElementById(id);
+      const puaRanges = [[0xE000,0xF8FF],[0xF0000,0xFFFFD],[0x100000,0x10FFFD]];
+      const maxCode = 0x10FFFF;
+      let currentScreen = 'generator';
+      let outputMode = 'full';
+      let generated = null;
+      let selectedCodePoint = 0xE001;
+      let browserStart = 0xE000;
+      let toastTimer;
+      const clamp = (n, min, max) => Math.max(min,Math.min(max,n));
+      const upperHex = n => n.toString(16).toUpperCase().padStart(4,'0');
+      const unicodeEscape = cp => {
+        if (cp<=0xFFFF) return '\\u'+upperHex(cp);
+        const u = cp-0x10000;
+        return '\\u'+upperHex(0xD800+(u>>10))+'\\u'+upperHex(0xDC00+(u&0x3FF));
+      };
+      function isScalar(cp) { return Number.isInteger(cp)&&cp>=0&&cp<=maxCode&&!(cp>=0xD800&&cp<=0xDFFF); }
+      function parseCode(raw) {
+        const s=String(raw||'').trim();
+        if(!s) return null;
+        const braced=s.match(/^\\u\{([0-9a-f]{1,6})\}$/i);
+        if(braced) {const n=parseInt(braced[1],16);return isScalar(n)?n:null;}
+        const escapes=s.match(/^(?:\\u[0-9a-f]{4}){1,2}$/i);
+        if(escapes) {
+          const parts=s.match(/\\u([0-9a-f]{4})/gi).map(x=>parseInt(x.slice(2),16));
+          if(parts.length===2&&parts[0]>=0xD800&&parts[0]<=0xDBFF&&parts[1]>=0xDC00&&parts[1]<=0xDFFF) return 0x10000+((parts[0]-0xD800)<<10)+(parts[1]-0xDC00);
+          return parts.length===1&&isScalar(parts[0])?parts[0]:null;
+        }
+        const hex=s.match(/^(?:U\+|0x)?([0-9a-f]{4,6})$/i);
+        if(hex) {const n=parseInt(hex[1],16);return isScalar(n)?n:null;}
+        const chars=Array.from(s);
+        if(chars.length===1){const cp=chars[0].codePointAt(0);return isScalar(cp)?cp:null;}
+        return null;
+      }
+      function rangeFor(cp) {return puaRanges.find(([lo,hi])=>cp>=lo&&cp<=hi)||null;}
+      function rangeName(cp) {if(cp>=0xE000&&cp<=0xF8FF)return 'Private Use Area (BMP)';if(cp>=0xF0000&&cp<=0xFFFFD)return 'Supplementary Private Use A';if(cp>=0x100000&&cp<=0x10FFFD)return 'Supplementary Private Use B';return 'Other Unicode code point';}
+      function toast(msg) {const el=$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2300);}
+      async function copyText(value,success) {
+        if(value===null||value===undefined||!String(value).length)return;
+        try {
+          if(navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(value);
+          else {const ta=document.createElement('textarea');ta.value=value;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;opacity:0;top:0;left:0';document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();if(!ok)throw new Error('Legacy clipboard unavailable');}
+          toast(success||'Copied to clipboard');
+        } catch(err) {console.error(err);toast('Copy blocked. Use HTTPS or localhost.');}
+      }
+      function setScreen(name) {
+        currentScreen=name;
+        for(const s of ['generator','copier']) {
+          const active=s===name;
+          $('screen-'+s).classList.toggle('hidden',!active);
+          $('nav-'+s).classList.toggle('active',active);
+          if(active)$('nav-'+s).setAttribute('aria-current','page');else $('nav-'+s).removeAttribute('aria-current');
+        }
+        if(location.hash!==('#'+name))history.replaceState(null,'','#'+name);
+      }
+      for(const el of document.querySelectorAll('[data-screen]'))el.addEventListener('click',()=>setScreen(el.dataset.screen));
+      const initial=location.hash.replace('#','');if(initial==='copier')setScreen('copier');
+      window.addEventListener('hashchange',()=>{const next=location.hash.replace('#','');if(next==='generator'||next==='copier')setScreen(next);});
+      function displayError(id,msg){const el=$(id);el.textContent=msg;el.classList.toggle('hidden',!msg);}
+      function generate() {
+        const rows=Number($('rows').value),cols=Number($('cols').value),height=Number($('height').value),ascent=Number($('ascent').value);
+        const start=parseCode($('start').value),file=$('texture').value.trim();
+        let error='';
+        if(!Number.isInteger(rows)||rows<1||rows>128||!Number.isInteger(cols)||cols<1||cols>128)error='Rows and columns must be whole numbers between 1 and 128.';
+        else if(rows*cols>10000)error='This preview supports up to 10,000 characters. Reduce your grid dimensions.';
+        else if(start===null)error='Enter a valid starting character, such as E000, U+E000, or \\uE000.';
+        else if(!rangeFor(start))error='Bitmap grid generation starts in a Private Use Area: E000–F8FF, F0000–FFFFD, or 100000–10FFFD.';
+        else if(start+rows*cols-1>rangeFor(start)[1])error='The grid crosses the end of this private-use Unicode range. Choose a lower starting value.';
+        else if(!/^[a-z0-9_.-]+:[a-z0-9_./-]+\.png$/.test(file)||file.includes('..'))error='Use a namespaced PNG path, such as accs:font/icons.png.';
+        else if(!Number.isInteger(height)||height<1||height>256)error='Height must be a whole number from 1 to 256.';
+        else if(!Number.isInteger(ascent)||ascent>height||ascent< -256)error='Ascent must be a whole number between −256 and the selected height.';
+        displayError('generator-error',error);
+        $('count').textContent=error?'—':(rows*cols).toLocaleString();
+        $('end-code').textContent=error?'—':upperHex(start+rows*cols-1);
+        const parts=file.match(/^([^:]+):(.+)$/);
+        $('texture-help').textContent=parts?`Physical path: assets/${parts[1]}/textures/${parts[2]}`:'Physical path will appear here';
+        if(error){ generated=null;$('json-preview').textContent='// Fix the configuration fields to generate JSON.';$('tile-preview').replaceChildren();$('tiles-footnote').textContent='';return; }
+        const chars=Array.from({length:rows},(_,r)=>Array.from({length:cols},(_,c)=>String.fromCodePoint(start+r*cols+c)).join(''));
+        const provider={type:'bitmap',file,height,ascent,chars};
+        const value=outputMode==='full'?{providers:[provider]}:provider;
+        const json=JSON.stringify(value,null,2).replace(/[\uE000-\uF8FF]|[\u{F0000}-\u{FFFFD}]|[\u{100000}-\u{10FFFD}]/gu, ch=>unicodeEscape(ch.codePointAt(0)));
+        generated={rows,cols,start,chars,provider,json,count:rows*cols};
+        $('json-preview').textContent=json;
+        $('json-hint').textContent=outputMode==='full'?'Standalone font JSON. For minecraft:default, merge providers instead of replacing vanilla.':'Single provider object. Insert into an existing providers array.';
+        renderTiles();
+      }
+      function renderTiles(){
+        const tileBox=$('tile-preview');tileBox.replaceChildren();if(!generated)return;
+        const shown=Math.min(generated.count,72);
+        for(let i=0;i<shown;i++){
+          const cp=generated.start+i;
+          const btn=document.createElement('button');btn.className='glyph-tile';btn.type='button';btn.title='Copy actual character U+'+upperHex(cp);btn.setAttribute('aria-label','Copy Unicode character U+'+upperHex(cp));
+          const square=document.createElement('span');square.className='glyph-square';square.textContent='✧';square.setAttribute('aria-hidden','true');
+          const code=document.createElement('span');code.className='glyph-id';code.textContent=upperHex(cp);
+          btn.append(square,code);btn.addEventListener('click',()=>copyText(String.fromCodePoint(cp),'Copied U+'+upperHex(cp)));tileBox.append(btn);
+        }
+        $('tiles-footnote').textContent=generated.count>72?`Showing the first 72 of ${generated.count.toLocaleString()} characters. All characters are included in the JSON and Copy character grid action.`:`${generated.rows} row${generated.rows===1?'':'s'} × ${generated.cols} columns. PNG sprite dimensions at 16×16 px per cell: ${generated.cols*16}×${generated.rows*16} px.`;
+      }
+      for(const id of ['rows','cols','start','texture','height','ascent']) $(id).addEventListener('input',generate);
+      for(const s of document.querySelectorAll('[data-output]'))s.addEventListener('click',()=>{
+        outputMode=s.dataset.output;
+        for(const b of document.querySelectorAll('[data-output]')){const active=b.dataset.output===outputMode;b.classList.toggle('selected',active);b.setAttribute('aria-pressed',String(active));}
+        generate();
+      });
+      $('copy-json').addEventListener('click',()=>generated?copyText(generated.json,'JSON copied'):toast('Fix configuration first'));
+      $('copy-all').addEventListener('click',()=>generated?copyText(generated.chars.join('\n'),'Actual Unicode grid copied'):toast('Fix configuration first'));
+      $('download-json').addEventListener('click',()=>{
+        if(!generated){toast('Fix configuration first');return;}
+        const blob=new Blob([generated.json+'\n'],{type:'application/json;charset=utf-8'});
+        const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=outputMode==='full'?'icons.json':'bitmap-provider.json';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),500);toast('JSON downloaded');
+      });
+      function setCharacter(cp,keepBrowser=false){
+        if(!isScalar(cp))return;
+        selectedCodePoint=cp;$('lookup').value=upperHex(cp);displayError('copier-error','');
+        $('symbol').textContent=String.fromCodePoint(cp);$('info-code').textContent='U+'+upperHex(cp);$('info-escape').textContent=unicodeEscape(cp);$('info-decimal').textContent=cp.toLocaleString('en-US');$('info-range').textContent=rangeName(cp);
+        if(!keepBrowser)browserStart=clamp(cp-((cp-0xE000)%24+24)%24,0,maxCode-23);
+        renderBrowser();
+      }
+      function renderBrowser(){
+        const grid=$('browser-grid');grid.replaceChildren();
+        for(let i=0;i<24;i++){
+          const cp=browserStart+i;if(!isScalar(cp))continue;
+          const button=document.createElement('button');button.className='browser-cell'+(cp===selectedCodePoint?' selected':'');button.type='button';button.title='Select U+'+upperHex(cp);button.setAttribute('aria-label','Select Unicode point U+'+upperHex(cp));
+          const label=document.createElement('span');label.className='browser-code';label.textContent=upperHex(cp);button.append(label);
+          button.addEventListener('click',()=>setCharacter(cp,true));grid.append(button);
+        }
+      }
+      $('lookup').addEventListener('input',()=>{
+        const cp=parseCode($('lookup').value);if(cp===null){displayError('copier-error','Enter a valid Unicode scalar value (for example E001 or U+F0000).');return;}setCharacter(cp);
+      });
+      $('copy-character').addEventListener('click',()=>copyText(String.fromCodePoint(selectedCodePoint),'Actual character copied'));
+      $('copy-escape').addEventListener('click',()=>copyText(unicodeEscape(selectedCodePoint),'JSON escape copied'));
+      $('copy-code').addEventListener('click',()=>copyText('U+'+upperHex(selectedCodePoint),'Code point copied'));
+      $('prev-char').addEventListener('click',()=>{let next=selectedCodePoint-1;if(next>=0xD800&&next<=0xDFFF)next=0xD7FF;if(isScalar(next))setCharacter(next);});
+      $('next-char').addEventListener('click',()=>{let next=selectedCodePoint+1;if(next>=0xD800&&next<=0xDFFF)next=0xE000;if(isScalar(next))setCharacter(next);});
+      $('browse-prev').addEventListener('click',()=>{browserStart=clamp(browserStart-24,0,maxCode-23);renderBrowser();});
+      $('browse-next').addEventListener('click',()=>{browserStart=clamp(browserStart+24,0,maxCode-23);renderBrowser();});
+      for(const btn of document.querySelectorAll('[data-code]'))btn.addEventListener('click',()=>setCharacter(parseInt(btn.dataset.code,16)));
+      generate();setCharacter(0xE001);
+    })();
+  </script>
+</body>
+</html>
